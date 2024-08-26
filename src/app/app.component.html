@@ -4,7 +4,7 @@
 </div>
 <div id="container"
   style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgb(248, 248, 248); color: rgb(0, 0, 0);">
-  <button (click)="startMicrophone()">Iniciar</button>
-  <button (click)="stopMicrophone()">Detener</button>
+  <button (click)="startMicrophone()" *ngIf="showstartbutton" >Iniciar</button>
+  <button (click)="stopMicrophone()" *ngIf="showEndbutton">Detener</button>
   <canvas #canvas></canvas>
 </div>

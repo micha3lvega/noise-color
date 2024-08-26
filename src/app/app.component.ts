@@ -8,11 +8,12 @@ import {
 } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Circle } from './circle';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, CommonModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
@@ -32,13 +33,15 @@ export class AppComponent implements OnInit {
   MIN_TIME_FADE_OUT_MILIS: number = 1500;
   MIN_VOLUME_SOUND: number = 1;
 
+  showstartbutton: boolean = true;
+  showEndbutton: boolean = false;
+
   constructor(private audioService: AudioService) {}
 
   ngOnInit(): void {
     this.ctx = this.canvasRef.nativeElement.getContext('2d')!;
     this.canvasRef.nativeElement.width = window.innerWidth;
     this.canvasRef.nativeElement.height = window.innerHeight;
-    this.startMicrophone();
   }
 
   ngOnDestroy(): void {
@@ -46,25 +49,26 @@ export class AppComponent implements OnInit {
   }
 
   startMicrophone(): void {
+    this.audioService = new AudioService();
     this.audioService.getMicrophoneAccess().then(() => {
       this.listenToAudio();
     });
+    this.showstartbutton = !this.showstartbutton;
+    this.showEndbutton = !this.showEndbutton!;
   }
 
   stopMicrophone(): void {
     this.audioService.stopMicrophone();
     cancelAnimationFrame(this.animationFrameId);
+    this.showstartbutton = !this.showstartbutton;
+    this.showEndbutton = !this.showEndbutton!;
   }
 
   private listenToAudio(): void {
     const analyser = this.audioService.getAnalyser();
     const dataArray = this.audioService.getDataArray();
-    console.log('Dibujando...');
 
     const draw = () => {
-
-      console.log('Dibujando...');
-
       analyser.getByteTimeDomainData(dataArray);
 
       let sum = 0;
