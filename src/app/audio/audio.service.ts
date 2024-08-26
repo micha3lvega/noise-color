@@ -1,51 +1,58 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
-
-interface AudioContextInterface extends AudioContext {
-  webkitAudioContext?: AudioContext;
-}
 
 @Injectable({
   providedIn: 'root',
 })
 export class AudioService implements OnDestroy {
 
-  private audioContext: AudioContextInterface =
-    new (window as any).AudioContext() ||
-    new (window as any).webkitAudioContext();
-  private mediaStreamSource: MediaStreamAudioSourceNode | null = null;
-  private analyser: AnalyserNode;
-  private dataArray: Uint8Array;
-  private isListening = new BehaviorSubject(false);
+  private audioContext!: AudioContext;
+  private mediaStream!: MediaStream | null;
+  private mediaStreamSource!: MediaStreamAudioSourceNode | null;
+  private analyser!: AnalyserNode;
+  private dataArray!: Uint8Array;
 
   constructor() {
+    this.audioContext = new (window.AudioContext ||
+      (window as any).webkitAudioContext)();
+    this.mediaStream = null;
+    this.mediaStreamSource = null;
     this.analyser = this.audioContext.createAnalyser();
     this.analyser.fftSize = 2048;
-    this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+    const bufferLength = this.analyser.frequencyBinCount;
+    this.dataArray = new Uint8Array(bufferLength);
   }
 
-  public async startListening() {
+  async getMicrophoneAccess(): Promise<void> {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      this.mediaStreamSource =
-        this.audioContext.createMediaStreamSource(stream);
+      this.mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+      this.mediaStreamSource = this.audioContext.createMediaStreamSource(
+        this.mediaStream
+      );
       this.mediaStreamSource.connect(this.analyser);
-      this.isListening.next(true);
-      setInterval(() => {
-        this.analyser.getByteTimeDomainData(this.dataArray);
+      console.log('Microphone access granted');
+    } catch (err) {
+      console.error('Error accessing microphone:', err);
+    }
+  }
 
-        const sum = this.dataArray.reduce((total, num) => total + num, 0);
-        const average = sum / this.dataArray.length;
+  getAnalyser(): AnalyserNode {
+    return this.analyser;
+  }
 
-        // Umbral del sonido
-        const threshold = 50;
-        if (average > threshold) {
-          console.log('Se detectó un sonido average: ' + average + ', threshold: ' + threshold);
-        }
-      }, 100);
+  getDataArray(): Uint8Array {
+    return this.dataArray;
+  }
 
-    } catch (error) {
-      console.error('Error al obtener acceso al micrófono:', error);
+  stopMicrophone(): void {
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach((track) => track.stop());
+      this.mediaStream = null;
+    }
+    if (this.mediaStreamSource) {
+      this.mediaStreamSource.disconnect();
+      this.mediaStreamSource = null;
     }
   }
 
@@ -54,7 +61,7 @@ export class AudioService implements OnDestroy {
       this.mediaStreamSource.disconnect();
       this.audioContext.close();
     }
-    this.isListening.next(false);
-  }
+    console.log('Close...');
 
+  }
 }
