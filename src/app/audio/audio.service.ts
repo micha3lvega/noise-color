@@ -8,7 +8,7 @@ interface AudioContextInterface extends AudioContext {
 @Injectable({
   providedIn: 'root',
 })
-export class AudioService {
+export class AudioService implements OnDestroy {
 
   private audioContext: AudioContextInterface =
     new (window as any).AudioContext() ||
@@ -47,6 +47,14 @@ export class AudioService {
     } catch (error) {
       console.error('Error al obtener acceso al micrófono:', error);
     }
+  }
+
+  ngOnDestroy(): void {
+    if (this.mediaStreamSource) {
+      this.mediaStreamSource.disconnect();
+      this.audioContext.close();
+    }
+    this.isListening.next(false);
   }
 
 }
