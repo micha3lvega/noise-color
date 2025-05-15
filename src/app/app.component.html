@@ -1,12 +1,16 @@
 <div id="container">
   <div class="controls">
     <div class="bottom-controls">
-      <button (click)="startMicrophone()" type="button">Iniciar</button>
-      <button (click)="stopMicrophone()" type="button">Detener</button>
+
+      <button class="casette-button" type="button" (click)="startMicrophone()">
+        <mat-icon>play_arrow</mat-icon>
+      </button>
+
+      <button class="casette-button" type="button" (click)="stopMicrophone()">
+        <mat-icon>pause</mat-icon>
+      </button>
       <div class="volumen-bar-container">
-        <div
-          class="volumen-bar"
-          [style.width.%]="volumenActual * 100">
+        <div class="volumen-bar" [style.width.%]="volumenActual * 100">
         </div>
       </div>
     </div>
