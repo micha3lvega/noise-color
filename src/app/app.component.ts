@@ -12,7 +12,6 @@ import { Circle } from './circle';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
@@ -30,15 +29,21 @@ export class AppComponent implements OnInit {
   MAX_CIRCLES: number = 100;
   MAX_TIME_FADE_OUT_MILIS: number = 3000;
   MIN_TIME_FADE_OUT_MILIS: number = 1500;
-  MIN_VOLUME_SOUND: number = 1;
+  MIN_VOLUME_SOUND: number = 0.05;
+
+  run: boolean = false;
+  volumenActual: number = 0;
 
   constructor(private audioService: AudioService) {}
 
   ngOnInit(): void {
-    this.ctx = this.canvasRef.nativeElement.getContext('2d')!;
-    this.canvasRef.nativeElement.width = window.innerWidth;
-    this.canvasRef.nativeElement.height = window.innerHeight;
-    this.startMicrophone();
+    const canvas = this.canvasRef.nativeElement;
+    const bounds = canvas.getBoundingClientRect();
+    console.log('bounds: ', bounds);
+
+    canvas.width = bounds.width;
+    canvas.height = bounds.height;
+    this.ctx = canvas.getContext('2d')!;
   }
 
   ngOnDestroy(): void {
@@ -46,42 +51,49 @@ export class AppComponent implements OnInit {
   }
 
   startMicrophone(): void {
+    this.run = true;
     this.audioService.getMicrophoneAccess().then(() => {
+      if (this.audioService.audioContextState === 'suspended') {
+        this.audioService.audioContextInstance.resume();
+      }
       this.listenToAudio();
     });
   }
 
   stopMicrophone(): void {
+    this.run = false;
     this.audioService.stopMicrophone();
     cancelAnimationFrame(this.animationFrameId);
+    this.listenToAudio();
   }
 
   private listenToAudio(): void {
     const analyser = this.audioService.getAnalyser();
     const dataArray = this.audioService.getDataArray();
-    console.log('Dibujando...');
 
-    const draw = () => {
+    if (this.run) {
+      const draw = () => {
+        analyser.getByteTimeDomainData(dataArray);
 
-      console.log('Dibujando...');
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          sum += (dataArray[i] - 128) ** 2;
+        }
 
-      analyser.getByteTimeDomainData(dataArray);
+        const volume = Math.sqrt(sum / dataArray.length);
 
-      let sum = 0;
-      for (let i = 0; i < dataArray.length; i++) {
-        sum += (dataArray[i] - 128) ** 2;
-      }
-      const volume = Math.sqrt(sum / dataArray.length);
+        this.volumenActual = Math.min(volume / 10, 1);
 
-      if (volume > this.MIN_VOLUME_SOUND) {
-        this.createCircle(volume);
-      }
+        if (volume > this.MIN_VOLUME_SOUND) {
+          this.createCircle(volume);
+        }
 
-      this.updateCircles();
-      this.animationFrameId = requestAnimationFrame(draw);
-    };
+        this.updateCircles();
+        this.animationFrameId = requestAnimationFrame(draw);
+      };
 
-    draw();
+      draw();
+    }
   }
 
   private createCircle(volume: number): void {
@@ -91,7 +103,10 @@ export class AppComponent implements OnInit {
 
     const canvas = this.canvasRef.nativeElement;
     const maxSize = Math.max(canvas.width, canvas.height);
-    const initialRadius = volume * (maxSize / 200);
+
+    const escala = Math.min(volume / 5, 1); // Normaliza entre 0 y 1
+    const initialRadius = 10 + escala * 50; // Tamaño entre 10 y 60 px aprox
+
     const x = Math.random() * canvas.width;
     const y = Math.random() * canvas.height;
     const color = `hsla(${Math.random() * 360}, 100%, 50%, 0.8)`;

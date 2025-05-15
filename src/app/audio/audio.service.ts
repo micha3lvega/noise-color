@@ -4,54 +4,62 @@ import { Injectable } from '@angular/core';
   providedIn: 'root',
 })
 export class AudioService {
-    private audioContext!: AudioContext;
-    private mediaStream!: MediaStream | null;
-    private mediaStreamSource!: MediaStreamAudioSourceNode | null;
-    private analyser!: AnalyserNode;
-    private dataArray!: Uint8Array;
+  private audioContext!: AudioContext;
+  private analyser!: AnalyserNode;
+  private dataArray!: Uint8Array;
+  private source!: MediaStreamAudioSourceNode;
+  private stream!: MediaStream;
 
-    constructor() {
+  constructor() {}
+
+  async getMicrophoneAccess(): Promise<void> {
+    this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    // Solo crear AudioContext si no existe o está cerrado
+    if (!this.audioContext || this.audioContext.state === 'closed') {
       this.audioContext = new (window.AudioContext ||
         (window as any).webkitAudioContext)();
-      this.mediaStream = null;
-      this.mediaStreamSource = null;
-      this.analyser = this.audioContext.createAnalyser();
-      this.analyser.fftSize = 2048;
-      const bufferLength = this.analyser.frequencyBinCount;
-      this.dataArray = new Uint8Array(bufferLength);
     }
 
-    async getMicrophoneAccess(): Promise<void> {
-      try {
-        this.mediaStream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        });
-        this.mediaStreamSource = this.audioContext.createMediaStreamSource(
-          this.mediaStream
-        );
-        this.mediaStreamSource.connect(this.analyser);
-        console.log('Microphone access granted');
-      } catch (err) {
-        console.error('Error accessing microphone:', err);
-      }
+    if (this.audioContext.state === 'suspended') {
+      await this.audioContext.resume();
     }
 
-    getAnalyser(): AnalyserNode {
-      return this.analyser;
-    }
+    this.analyser = this.audioContext.createAnalyser();
+    this.analyser.fftSize = 2048;
 
-    getDataArray(): Uint8Array {
-      return this.dataArray;
-    }
+    const bufferLength = this.analyser.frequencyBinCount;
+    this.dataArray = new Uint8Array(bufferLength);
 
-    stopMicrophone(): void {
-      if (this.mediaStream) {
-        this.mediaStream.getTracks().forEach((track) => track.stop());
-        this.mediaStream = null;
-      }
-      if (this.mediaStreamSource) {
-        this.mediaStreamSource.disconnect();
-        this.mediaStreamSource = null;
-      }
+    this.source = this.audioContext.createMediaStreamSource(this.stream);
+    this.source.connect(this.analyser);
+  }
+
+  getAnalyser(): AnalyserNode {
+    return this.analyser;
+  }
+
+  getDataArray(): Uint8Array {
+    return this.dataArray;
+  }
+
+  get audioContextState(): string {
+    return this.audioContext?.state;
+  }
+
+  get audioContextInstance(): AudioContext {
+    return this.audioContext;
+  }
+
+  stopMicrophone(): void {
+    if (this.stream) {
+      this.stream.getTracks().forEach((track) => track.stop());
     }
+    if (this.source) {
+      this.source.disconnect();
+    }
+    if (this.audioContext && this.audioContext.state !== 'closed') {
+      this.audioContext.close();
+    }
+  }
 }

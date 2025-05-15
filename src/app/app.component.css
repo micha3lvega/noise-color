@@ -1,0 +1,88 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:host {
+  display: block;
+  height: 98%;
+  width: 100%;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden; /* evita scroll */
+  background-color: black; /* fondo general negro */
+}
+
+#container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+canvas {
+  display: block;
+  width: 98vw;
+  height: 100vh;
+  background-color: #000;
+}
+
+/* Controles al fondo */
+.controls {
+  background: #f9f9f9;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Línea horizontal de botones + barra */
+.bottom-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Botones */
+.bottom-controls button {
+  padding: 5px 10px;
+  font-size: 14px;
+}
+
+/* Barra de sonido */
+.volumen-bar-container {
+  flex: 1;
+  height: 10px;
+  background-color: #ddd;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.volumen-bar {
+  height: 100%;
+  background-color: red;
+  transition: width 0.1s linear;
+}
+
+/* Contador de círculos */
+.circle-counters {
+  text-align: center;
+  font-weight: bold;
+}
+
+.bottom-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Botones */
+.bottom-controls button {
+  padding: 5px 10px;
+  font-size: 14px;
+}
