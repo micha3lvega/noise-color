@@ -8,12 +8,15 @@ import {
 } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Circle } from './circle';
+import { MatIconModule } from '@angular/material/icon';
+
 
 @Component({
   selector: 'app-root',
   standalone: true,
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
+  imports: [MatIconModule]
 })
 export class AppComponent implements OnInit {
   @ViewChild('canvas', { static: true })
@@ -51,6 +54,8 @@ export class AppComponent implements OnInit {
   }
 
   startMicrophone(): void {
+    console.log("...................................");
+
     this.run = true;
     this.audioService.getMicrophoneAccess().then(() => {
       if (this.audioService.audioContextState === 'suspended') {
